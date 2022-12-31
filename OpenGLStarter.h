@@ -20,20 +20,20 @@ int initOpenGLWithGLFW(const char* windowTitle, int windowWidth, int windowHeigh
     if (!glfwInit())
         return -1;
 
-	window = glfwCreateWindow(windowWidth, windowHeight, windowTitle, NULL, NULL);
-	glfwMakeContextCurrent(window);
+    window = glfwCreateWindow(windowWidth, windowHeight, windowTitle, NULL, NULL);
+    glfwMakeContextCurrent(window);
 
-	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
-	{
-		std::cout << "Failed to initialize GLAD" << std::endl;
-		return -1;
-	}
+    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
+    {
+        std::cout << "Failed to initialize GLAD" << std::endl;
+        return -1;
+    }
 
-	glViewport(0, 0, windowWidth, windowHeight);
+    glViewport(0, 0, windowWidth, windowHeight);
 
     glfwSetWindowSizeCallback(window, [](GLFWwindow* window, int width, int height) {
         glViewport(0, 0, width, height);
-    });
+        });
 }
 
 void disableCursor() { glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED); }
@@ -166,6 +166,153 @@ private:
             }
         }
     }
+};
+
+class Camera
+{
+public:
+    Camera(glm::vec3 pos, float cameraWidth, float cameraHeight)
+        : cameraPos(pos), cameraUp({ 0.0f, 1.0f, 0.0f }), cameraFront({ 0.0f, 0.0f, -1.0f }), cameraRight(0.0f), worldUp(cameraUp), yaw(-90.0f), pitch(0.0f),
+        projection(glm::perspective(glm::radians(45.0f), cameraWidth / cameraHeight, 0.1f, 100.0f)), view(1.0f)
+    {
+        UpdateCameraVectors();
+    }
+    ~Camera() = default;
+
+    glm::mat4 GetViewProjection()
+    {
+        view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
+        return projection * view;
+    }
+
+    glm::mat4& GetView()
+    {
+        view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
+        return view;
+    }
+
+    glm::mat4& GetProjection()
+    {
+        return projection;
+    }
+
+    glm::vec3& GetPosition()
+    {
+        return cameraPos;
+    }
+
+    void SetPosition(glm::vec3 pos)
+    {
+        cameraPos = pos;
+    }
+
+    void SetYaw(float yawValue)
+    {
+        yaw = yawValue;
+    }
+
+    void SetPitch(float pitchValue)
+    {
+        pitch = pitchValue;
+    }
+
+    float GetYaw()
+    {
+        return yaw;
+    }
+
+    float GetPitch()
+    {
+        return pitch;
+    }
+
+    glm::vec3& GetCameraRight()
+    {
+        return cameraRight;
+    }
+
+    glm::vec3& GetCameraFront()
+    {
+        return cameraFront;
+    }
+
+    void UpdateCameraVectors()
+    {
+        // calculate the new Front vector
+        glm::vec3 front;
+        front.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
+        front.y = sin(glm::radians(pitch));
+        front.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
+        cameraFront = glm::normalize(front);
+        // also re-calculate the Right and Up vector
+        cameraRight = glm::normalize(glm::cross(cameraFront, worldUp));  // normalize the vectors, because their length gets closer to 0 the more you look up or down which results in slower movement.
+        cameraUp = glm::normalize(glm::cross(cameraRight, cameraFront));
+    }
+
+private:
+    glm::vec3 cameraPos;
+    glm::vec3 cameraUp;
+    glm::vec3 cameraFront;
+    glm::vec3 cameraRight;
+    glm::vec3 worldUp;
+    // euler Angles
+    float yaw;
+    float pitch;
+
+    glm::mat4 projection;
+    glm::mat4 view;
+};
+
+enum Camera_Movement {
+    FORWARD,
+    BACKWARD,
+    LEFT,
+    RIGHT
+};
+
+class CameraControllerFirstPerson
+{
+public:
+    CameraControllerFirstPerson(Camera* camera, float moveSpeed, float mouseSens) : cameraPtr(camera), movementSpeed(moveSpeed), mouseSensitivity(mouseSens) {}
+
+    void ProcessKeyboard(Camera_Movement direction, float deltaTime)
+    {
+        float velocity = movementSpeed * deltaTime;
+        if (direction == FORWARD)
+            cameraPtr->SetPosition(cameraPtr->GetPosition() + cameraPtr->GetCameraFront() * velocity);
+        if (direction == BACKWARD)
+            cameraPtr->SetPosition(cameraPtr->GetPosition() - cameraPtr->GetCameraFront() * velocity);
+        if (direction == LEFT)
+            cameraPtr->SetPosition(cameraPtr->GetPosition() - cameraPtr->GetCameraRight() * velocity);
+        if (direction == RIGHT)
+            cameraPtr->SetPosition(cameraPtr->GetPosition() + cameraPtr->GetCameraRight() * velocity);
+    }
+
+    // processes input received from a mouse input system. Expects the offset value in both the x and y direction.
+    void ProcessMouseMovement(float xoffset, float yoffset, GLboolean constrainPitch = true)
+    {
+        xoffset *= mouseSensitivity;
+        yoffset *= mouseSensitivity;
+
+        cameraPtr->SetYaw(cameraPtr->GetYaw() + xoffset);
+        cameraPtr->SetPitch(cameraPtr->GetPitch() + yoffset);
+
+        // make sure that when pitch is out of bounds, screen doesn't get flipped
+        if (constrainPitch)
+        {
+            if (cameraPtr->GetPitch() > 89.0f)
+                cameraPtr->SetPitch(89.0f);
+            if (cameraPtr->GetPitch() < -89.0f)
+                cameraPtr->SetPitch(-89.0f);
+        }
+
+        // update Front, Right and Up Vectors using the updated Euler angles
+        cameraPtr->UpdateCameraVectors();
+    }
+private:
+    Camera* cameraPtr;
+    float movementSpeed;
+    float mouseSensitivity;
 };
 
 
