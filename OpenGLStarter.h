@@ -11,11 +11,11 @@
 #include <glm/gtc/type_ptr.hpp>
 #include "GLFW/glfw3.h"
 
-GLFWwindow* window;
+inline GLFWwindow* window;
 
 #define mainLoop while(!glfwWindowShouldClose(window))
 
-int initOpenGLWithGLFW(const char* windowTitle, int windowWidth, int windowHeight)
+inline int initOpenGLWithGLFW(const char* windowTitle, int windowWidth, int windowHeight)
 {
     if (!glfwInit())
         return -1;
@@ -36,8 +36,8 @@ int initOpenGLWithGLFW(const char* windowTitle, int windowWidth, int windowHeigh
         });
 }
 
-void disableCursor() { glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED); }
-void enableCursor() { glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL); }
+inline void disableCursor() { glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED); }
+inline void enableCursor() { glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL); }
 
 //Helper classes
 
@@ -123,6 +123,11 @@ public:
     void SetFloat(const std::string& name, float value) const
     {
         glUniform1f(glGetUniformLocation(ID, name.c_str()), value);
+    }
+    // ------------------------------------------------------------------------
+    void SetMat3(const std::string& name, glm::mat3& value) const
+    {
+        glUniformMatrix3fv(glGetUniformLocation(ID, name.c_str()), 1, GL_FALSE, glm::value_ptr(value));
     }
     // ------------------------------------------------------------------------
     void SetMat4(const std::string& name, glm::mat4& value) const
