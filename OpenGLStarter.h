@@ -30,10 +30,6 @@ inline int initOpenGLWithGLFW(const char* windowTitle, int windowWidth, int wind
     }
 
     glViewport(0, 0, windowWidth, windowHeight);
-
-    glfwSetWindowSizeCallback(window, [](GLFWwindow* window, int width, int height) {
-        glViewport(0, 0, width, height);
-        });
 }
 
 inline void disableCursor() { glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED); }
@@ -178,11 +174,18 @@ class Camera
 public:
     Camera(glm::vec3 pos, float cameraWidth, float cameraHeight)
         : cameraPos(pos), cameraUp({ 0.0f, 1.0f, 0.0f }), cameraFront({ 0.0f, 0.0f, -1.0f }), cameraRight(0.0f), worldUp(cameraUp), yaw(-90.0f), pitch(0.0f),
-        projection(glm::perspective(glm::radians(45.0f), cameraWidth / cameraHeight, 0.1f, 100.0f)), view(1.0f)
+        projection(glm::perspective(glm::radians(45.0f), cameraWidth / cameraHeight, 0.1f, 100.0f)), view(1.0f), cameraWidth(cameraWidth), cameraHeight(cameraHeight)
     {
         UpdateCameraVectors();
     }
     ~Camera() = default;
+
+    void UpdateWindowSize(int width, int height)
+    {
+        cameraWidth = width;
+        cameraHeight = height;
+        projection = glm::perspective(glm::radians(45.0f), cameraWidth / cameraHeight, 0.1f, 100.0f);
+    }
 
     glm::mat4 GetViewProjection()
     {
@@ -241,6 +244,23 @@ public:
         return cameraFront;
     }
 
+    float GetCameraWidth()
+    {
+        return cameraWidth;
+    }
+
+    float GetCameraHeight()
+    {
+        return cameraHeight;
+    }
+
+    void LookAt(glm::vec3 focus)
+    {
+        view = glm::lookAt(cameraPos, focus, cameraUp);
+        cameraFront = glm::normalize(focus - cameraPos);
+        cameraUp = glm::normalize(glm::cross(cameraRight, cameraFront));
+    }
+
     void UpdateCameraVectors()
     {
         // calculate the new Front vector
@@ -263,6 +283,9 @@ private:
     // euler Angles
     float yaw;
     float pitch;
+
+    float cameraWidth;
+    float cameraHeight;
 
     glm::mat4 projection;
     glm::mat4 view;
