@@ -244,6 +244,11 @@ public:
         return cameraFront;
     }
 
+    glm::vec3& GetCameraUp()
+    {
+        return cameraUp;
+    }
+
     float GetCameraWidth()
     {
         return cameraWidth;
