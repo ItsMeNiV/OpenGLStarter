@@ -184,7 +184,7 @@ public:
     {
         cameraWidth = width;
         cameraHeight = height;
-        projection = glm::perspective(glm::radians(45.0f), cameraWidth / cameraHeight, 0.1f, 100.0f);
+        projection = glm::perspective(glm::radians(45.0f), cameraWidth / cameraHeight, 0.1f, 1000.0f);
     }
 
     glm::mat4 GetViewProjection()
@@ -342,6 +342,8 @@ public:
         // update Front, Right and Up Vectors using the updated Euler angles
         cameraPtr->UpdateCameraVectors();
     }
+
+    void SetSpeed(float moveSpeed) { movementSpeed = moveSpeed; }
 private:
     Camera* cameraPtr;
     float movementSpeed;
