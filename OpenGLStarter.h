@@ -17,6 +17,8 @@ inline GLFWwindow* window;
 
 inline int initOpenGLWithGLFW(const char* windowTitle, int windowWidth, int windowHeight)
 {
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     if (!glfwInit())
         return -1;
 
@@ -98,6 +100,45 @@ public:
         glDeleteShader(vertex);
         glDeleteShader(fragment);
     }
+
+    Shader(const char* computePath)
+    {
+        // 1. retrieve the compute source code from filePath
+        std::string computeCode;
+        std::ifstream cShaderFile;
+        // ensure ifstream object can throw exceptions:
+        cShaderFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+        try
+        {
+            // open file
+            cShaderFile.open(computePath);
+            std::stringstream cShaderStream;
+            // read file's buffer contents into streams
+            cShaderStream << cShaderFile.rdbuf();
+            // close file handlers
+            cShaderFile.close();
+            // convert stream into string
+            computeCode = cShaderStream.str();
+        }
+        catch (std::ifstream::failure& e)
+        {
+            std::cout << "ERROR::SHADER::FILE_NOT_SUCCESFULLY_READ: " << e.what() << std::endl;
+        }
+        const char* cShaderCode = computeCode.c_str();
+        
+        unsigned int compute = glCreateShader(GL_FRAGMENT_SHADER);
+        glShaderSource(compute, 1, &cShaderCode, NULL);
+        glCompileShader(compute);
+        checkCompileErrors(compute, "COMPUTE");
+        // shader Program
+        ID = glCreateProgram();
+        glAttachShader(ID, compute);
+        glLinkProgram(ID);
+        checkCompileErrors(ID, "PROGRAM");
+        // delete the shader as it's linked into our program now and no longer necessary
+        glDeleteShader(compute);
+    }
+
     // activate the shader
     // ------------------------------------------------------------------------
     void Use()
