@@ -126,7 +126,7 @@ public:
         }
         const char* cShaderCode = computeCode.c_str();
         
-        unsigned int compute = glCreateShader(GL_FRAGMENT_SHADER);
+        unsigned int compute = glCreateShader(GL_COMPUTE_SHADER);
         glShaderSource(compute, 1, &cShaderCode, NULL);
         glCompileShader(compute);
         checkCompileErrors(compute, "COMPUTE");
