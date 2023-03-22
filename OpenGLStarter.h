@@ -186,6 +186,11 @@ public:
     {
         glProgramUniform1i(ID, glGetUniformLocation(ID, name.c_str()), slot);
     }
+    // ------------------------------------------------------------------------
+    void SetShaderStorageBlockBinding(const int32_t blockIndex, int32_t blockBinding)
+    {
+        glShaderStorageBlockBinding(ID, blockIndex, blockBinding);
+    }
 
 private:
     // utility function for checking shader compilation/linking errors.
