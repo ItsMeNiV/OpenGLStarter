@@ -125,7 +125,7 @@ public:
             std::cout << "ERROR::SHADER::FILE_NOT_SUCCESFULLY_READ: " << e.what() << std::endl;
         }
         const char* cShaderCode = computeCode.c_str();
-        
+
         unsigned int compute = glCreateShader(GL_COMPUTE_SHADER);
         glShaderSource(compute, 1, &cShaderCode, NULL);
         glCompileShader(compute);
@@ -220,6 +220,36 @@ private:
     }
 };
 
+struct Plane
+{
+    glm::vec3 normal = { 0.f, 1.f, 0.f }; // unit vector
+    float     distance = 0.f;        // Distance with origin
+
+    Plane() = default;
+
+    Plane(const glm::vec3& p1, const glm::vec3& norm)
+        : normal(glm::normalize(norm)),
+        distance(glm::dot(normal, p1))
+    {}
+
+    float getSignedDistanceToPlane(const glm::vec3& point) const
+    {
+        return glm::dot(normal, point) - distance;
+    }
+};
+
+struct Frustum
+{
+    Plane topFace;
+    Plane bottomFace;
+
+    Plane rightFace;
+    Plane leftFace;
+
+    Plane farFace;
+    Plane nearFace;
+};
+
 class Camera
 {
 public:
@@ -310,6 +340,11 @@ public:
         return cameraHeight;
     }
 
+    const Frustum& GetCameraFrustum()
+    {
+        return cameraFrustum;
+    }
+
     void LookAt(glm::vec3 focus)
     {
         view = glm::lookAt(cameraPos, focus, cameraUp);
@@ -328,6 +363,8 @@ public:
         // also re-calculate the Right and Up vector
         cameraRight = glm::normalize(glm::cross(cameraFront, worldUp));  // normalize the vectors, because their length gets closer to 0 the more you look up or down which results in slower movement.
         cameraUp = glm::normalize(glm::cross(cameraRight, cameraFront));
+
+        updateFrustum();
     }
 
 private:
@@ -345,6 +382,26 @@ private:
 
     glm::mat4 projection;
     glm::mat4 view;
+
+    Frustum cameraFrustum;
+
+    void updateFrustum()
+    {
+        float aspect = cameraWidth / cameraHeight;
+        float zNear = 0.1f;
+        float zFar = 1000.0f;
+
+        const float halfVSide = zFar * tanf(glm::radians(45.0f) * .5f);
+        const float halfHSide = halfVSide * aspect;
+        const glm::vec3 frontMultFar = zFar * cameraFront;
+
+        cameraFrustum.nearFace = { cameraPos + zNear * cameraFront, cameraFront };
+        cameraFrustum.farFace = { cameraPos + frontMultFar, -cameraFront };
+        cameraFrustum.rightFace = { cameraPos, glm::cross(frontMultFar - cameraRight * halfHSide, cameraUp) };
+        cameraFrustum.leftFace = { cameraPos, glm::cross(cameraUp, frontMultFar + cameraRight * halfHSide) };
+        cameraFrustum.topFace = { cameraPos, glm::cross(cameraRight, frontMultFar - cameraUp * halfVSide) };
+        cameraFrustum.bottomFace = { cameraPos, glm::cross(frontMultFar + cameraUp * halfVSide, cameraRight) };
+    }
 };
 
 enum Camera_Movement {
