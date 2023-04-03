@@ -18,7 +18,7 @@ int main()
 {
     initOpenGLWithGLFW("Example window", 900, 600);
 
-    Shader exampleShader("example-shaders/exampleshader.vert", "example-shaders/exampleshader.frag");
+    Shader exampleShader("example-shaders/exampleshader.glsl", ShaderType::VERTEX_AND_FRAGMENT);
 
     float vertices[] = {
         -0.5f, -0.5f, 0.0f, // left  
@@ -46,7 +46,7 @@ int main()
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        exampleShader.Use();
+        exampleShader.Bind();
         glBindVertexArray(vertexArray);
         glDrawArrays(GL_TRIANGLES, 0, 3);
 
