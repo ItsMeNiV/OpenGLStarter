@@ -378,6 +378,15 @@ public:
         cameraUp = glm::normalize(glm::cross(cameraRight, cameraFront));
     }
 
+    void SetCameraView(glm::vec3 position, glm::vec3 lookAt, glm::vec3 up)
+    {
+        cameraPos = position;
+        cameraFront = glm::normalize(lookAt - cameraPos);
+        cameraUp = up;
+        cameraRight = glm::normalize(glm::cross(cameraFront, worldUp));
+        view = glm::lookAt(cameraPos, cameraFront, cameraUp);
+    }
+
     void UpdateCameraVectors()
     {
         // calculate the new Front vector
