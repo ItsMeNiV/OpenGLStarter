@@ -52,56 +52,23 @@ public:
     // ------------------------------------------------------------------------
     Shader(const char* sourcePath, const ShaderType type)
     {
-        m_Path = std::string(sourcePath).substr(0, std::string(sourcePath).find_last_of('/') + 1);
+        m_Type = type;
+        m_SourcePath = std::string(sourcePath);
+        m_Path = m_SourcePath.substr(0, m_SourcePath.find_last_of('/') + 1);
         std::string sourceCode = readFile(sourcePath);
+        createShaderProgram(std::move(sourceCode));
+    }
+    
+    ~Shader()
+    {
+        glDeleteProgram(m_Id);
+    }
 
-        if (type == ShaderType::COMPUTE)
-        {
-            replaceTokens(sourceCode, SourceType::COMPUTE);
-
-            const char* cShaderCode = sourceCode.c_str();
-            unsigned int compute = glCreateShader(GL_COMPUTE_SHADER);
-            glShaderSource(compute, 1, &cShaderCode, NULL);
-            glCompileShader(compute);
-            checkCompileErrors(compute, "COMPUTE");
-
-            m_Id = glCreateProgram();
-            glAttachShader(m_Id, compute);
-            glLinkProgram(m_Id);
-            checkCompileErrors(m_Id, "PROGRAM");
-
-            glDeleteShader(compute);
-        }
-        else if (type == ShaderType::VERTEX_AND_FRAGMENT)
-        {
-            std::string vertexCode = std::string(sourceCode);
-            std::string fragmentCode = std::string(sourceCode);
-            replaceTokens(vertexCode, SourceType::VERTEX);
-            replaceTokens(fragmentCode, SourceType::FRAGMENT);
-
-            const char* vShaderCode = vertexCode.c_str();
-            const char* fShaderCode = fragmentCode.c_str();
-            unsigned int vertex, fragment;
-
-            vertex = glCreateShader(GL_VERTEX_SHADER);
-            glShaderSource(vertex, 1, &vShaderCode, NULL);
-            glCompileShader(vertex);
-            checkCompileErrors(vertex, "VERTEX");
-
-            fragment = glCreateShader(GL_FRAGMENT_SHADER);
-            glShaderSource(fragment, 1, &fShaderCode, NULL);
-            glCompileShader(fragment);
-            checkCompileErrors(fragment, "FRAGMENT");
-
-            m_Id = glCreateProgram();
-            glAttachShader(m_Id, vertex);
-            glAttachShader(m_Id, fragment);
-            glLinkProgram(m_Id);
-            checkCompileErrors(m_Id, "PROGRAM");
-
-            glDeleteShader(vertex);
-            glDeleteShader(fragment);
-        }
+    void RecompileFromSource()
+    {
+        std::string sourceCode = readFile(m_SourcePath.c_str());
+        glDeleteProgram(m_Id);
+        createShaderProgram(std::move(sourceCode));
     }
 
     // activate the shader
@@ -161,8 +128,61 @@ private:
 
     unsigned int m_Id;
     std::string m_Path;
+    std::string m_SourcePath;
+    ShaderType m_Type;
 
     enum class SourceType : int { VERTEX = 0, FRAGMENT, COMPUTE };
+
+    void createShaderProgram(std::string&& sourceCode)
+    {
+        if (m_Type == ShaderType::COMPUTE)
+        {
+            replaceTokens(sourceCode, SourceType::COMPUTE);
+
+            const char* cShaderCode = sourceCode.c_str();
+            unsigned int compute = glCreateShader(GL_COMPUTE_SHADER);
+            glShaderSource(compute, 1, &cShaderCode, NULL);
+            glCompileShader(compute);
+            checkCompileErrors(compute, "COMPUTE");
+
+            m_Id = glCreateProgram();
+            glAttachShader(m_Id, compute);
+            glLinkProgram(m_Id);
+            checkCompileErrors(m_Id, "PROGRAM");
+
+            glDeleteShader(compute);
+        }
+        else if (m_Type == ShaderType::VERTEX_AND_FRAGMENT)
+        {
+            std::string vertexCode = std::string(sourceCode);
+            std::string fragmentCode = std::string(sourceCode);
+            replaceTokens(vertexCode, SourceType::VERTEX);
+            replaceTokens(fragmentCode, SourceType::FRAGMENT);
+
+            const char* vShaderCode = vertexCode.c_str();
+            const char* fShaderCode = fragmentCode.c_str();
+            unsigned int vertex, fragment;
+
+            vertex = glCreateShader(GL_VERTEX_SHADER);
+            glShaderSource(vertex, 1, &vShaderCode, NULL);
+            glCompileShader(vertex);
+            checkCompileErrors(vertex, "VERTEX");
+
+            fragment = glCreateShader(GL_FRAGMENT_SHADER);
+            glShaderSource(fragment, 1, &fShaderCode, NULL);
+            glCompileShader(fragment);
+            checkCompileErrors(fragment, "FRAGMENT");
+
+            m_Id = glCreateProgram();
+            glAttachShader(m_Id, vertex);
+            glAttachShader(m_Id, fragment);
+            glLinkProgram(m_Id);
+            checkCompileErrors(m_Id, "PROGRAM");
+
+            glDeleteShader(vertex);
+            glDeleteShader(fragment);
+        }
+    }
 
     // utility function for checking shader compilation/linking errors.
     // ------------------------------------------------------------------------
