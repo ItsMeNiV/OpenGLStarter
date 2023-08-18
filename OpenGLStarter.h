@@ -386,6 +386,11 @@ public:
         return cameraHeight;
     }
 
+    glm::vec3 GetCameraPosition()
+    {
+        return cameraPos;
+    }
+
     const Frustum& GetCameraFrustum()
     {
         return cameraFrustum;
