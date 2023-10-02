@@ -116,15 +116,23 @@ public:
     // ------------------------------------------------------------------------
     void SetTexture(const std::string& name, int32_t slot)
     {
-        glProgramUniform1i(m_Id, glGetUniformLocation(m_Id, name.c_str()), slot);
+        glProgramUniform1i(m_Id, GetUniformLocation(name), slot);
     }
     // ------------------------------------------------------------------------
     void SetShaderStorageBlockBinding(const int32_t blockIndex, int32_t blockBinding)
     {
         glShaderStorageBlockBinding(m_Id, blockIndex, blockBinding);
     }
-
-    uint32_t GetId() const { return m_Id; }
+    // ------------------------------------------------------------------------
+    int32_t GetUniformLocation(const std::string& name)
+    {
+        return glGetUniformLocation(m_Id, name.c_str());
+    }
+    // ------------------------------------------------------------------------
+    uint32_t GetId() const
+    {
+        return m_Id;
+    }
 
 private:
 
