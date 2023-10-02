@@ -124,9 +124,11 @@ public:
         glShaderStorageBlockBinding(m_Id, blockIndex, blockBinding);
     }
 
+    uint32_t GetId() const { return m_Id; }
+
 private:
 
-    unsigned int m_Id;
+    uint32_t m_Id;
     std::string m_Path;
     std::string m_SourcePath;
     ShaderType m_Type;
